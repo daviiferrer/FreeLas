@@ -1,0 +1,48 @@
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Database
+*.db
+*.sqlite3
+
+# Debug / Test artifacts
+debug_raw.html
+ai_test_output.*
+error.txt
+scraper_sample.json
+
+# Temp scripts (not part of core app)
+test_*.py
+find_jid.py
+create_group.py
+login_manual.py
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes
+postgres_data/
+waha_data/
+
+# Gemini artifacts
+.gemini/

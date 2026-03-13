@@ -1,0 +1,81 @@
+
+services:
+  app:
+    build: .
+    container_name: freelaas_backend
+    restart: unless-stopped
+    ports:
+      - "4005:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://freelaas:freelaas123@db:5432/freelaas
+      - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY}
+      - QWEN_BASE_URL=${QWEN_BASE_URL}
+      - MODEL_SCANNER=${MODEL_SCANNER}
+      - MODEL_ANALYST=${MODEL_ANALYST}
+      - MODEL_STRATEGIST=${MODEL_STRATEGIST}
+      - SCRAPE_INTERVAL_MINUTES=${SCRAPE_INTERVAL_MINUTES}
+      - SCRAPE_MAX_PAGES=${SCRAPE_MAX_PAGES}
+      - SCRAPE_DELAY_MIN=${SCRAPE_DELAY_MIN}
+      - SCRAPE_DELAY_MAX=${SCRAPE_DELAY_MAX}
+      - TIME_FILTER_MINUTES=${TIME_FILTER_MINUTES}
+      - WAHA_API_URL=http://waha:3000
+      - WAHA_API_KEY=${WAHA_API_KEY}
+      - WAHA_PHONE_NUMBER=${WAHA_PHONE_NUMBER}
+      - WAHA_SESSION=${WAHA_SESSION:-default}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONUNBUFFERED=1
+      - AUTO_ACTION_ENABLED=${AUTO_ACTION_ENABLED:-false}
+      - TZ=America/Sao_Paulo
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      waha:
+        condition: service_started
+
+  db:
+    image: postgres:16-alpine
+    container_name: freelaas_db
+    restart: unless-stopped
+    command: postgres -c timezone=America/Sao_Paulo -c log_timezone=America/Sao_Paulo
+    environment:
+      - POSTGRES_USER=freelaas
+      - POSTGRES_PASSWORD=freelaas123
+      - POSTGRES_DB=freelaas
+      - TZ=America/Sao_Paulo
+      - PGTZ=America/Sao_Paulo
+    ports:
+      - "5005:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U freelaas -d freelaas"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  waha:
+    image: devlikeapro/waha
+    container_name: freelaas_waha
+    restart: unless-stopped
+    ports:
+      - "3005:3000"
+    volumes:
+      - waha_data:/app/.sessions
+    environment:
+      - WHATSAPP_DEFAULT_SESSION=${WAHA_SESSION:-default}
+      - WHATSAPP_DEFAULT_ENGINE=GOWS
+      - WAHA_REST_API_KEY=${WAHA_API_KEY}
+      - WHATSAPP_API_KEY=${WAHA_API_KEY}
+      - WAHA_DASHBOARD_USERNAME=${WAHA_DASHBOARD_USERNAME:-admin}
+      - WAHA_DASHBOARD_PASSWORD=${WAHA_DASHBOARD_PASSWORD}
+      - WHATSAPP_SWAGGER_USERNAME=${WHATSAPP_SWAGGER_USERNAME:-admin}
+      - WHATSAPP_SWAGGER_PASSWORD=${WHATSAPP_SWAGGER_PASSWORD}
+      - TZ=America/Sao_Paulo
+      - WHATSAPP_HOOK_URL=http://app:8000/api/webhook/waha
+      - WHATSAPP_HOOK_EVENTS=message
+
+volumes:
+  postgres_data:
+  waha_data:
