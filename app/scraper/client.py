@@ -1,6 +1,5 @@
 import random
-
-import httpx
+from curl_cffi import requests
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -32,11 +31,12 @@ def get_random_headers() -> dict:
 async def fetch_page(page: int = 1) -> str | None:
     url = f"{BASE_URL}?order=mais-recentes&categoria=web-mobile-e-software&page={page}"
     try:
-        async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
-            response = await client.get(url, headers=get_random_headers())
+        # Use curl_cffi to impersonate Chrome and bypass Cloudflare WAF on datacenter IPs
+        async with requests.AsyncSession(impersonate="chrome120") as session:
+            response = await session.get(url, timeout=30, headers=get_random_headers())
             response.raise_for_status()
             return response.text
-    except httpx.HTTPError as e:
+    except Exception as e:
         import logging
-        logging.getLogger("freelaas.scraper").error(f"Failed to fetch page {page}: {e}")
+        logging.getLogger("freelaas.scraper").error(f"Failed to fetch page {page} with curl_cffi: {e}")
         return None
